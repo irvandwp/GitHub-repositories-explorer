@@ -1,35 +1,105 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useFormik } from "formik";
+import { useState } from "react";
+import axios from "axios";
+import "./App.css";
+import { Button, CircularProgress, TextField, Typography } from "@mui/material";
+import UserAccordion from "./components/UserAccordion";
+import { GitHubUser, GitHubRepo } from "./types/types";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [users, setUsers] = useState<GitHubUser[]>([]);
+  const [reposCache, setReposCache] = useState<{ [key: string]: GitHubRepo[] }>(
+    {},
+  );
+  const [loading, setLoading] = useState(false);
+
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+    },
+    onSubmit: async (values) => {
+      if (!values.username) return;
+
+      setLoading(true);
+      try {
+        const response = await axios.get<{ items: GitHubUser[] }>(
+          `https://api.github.com/search/users?q=${values.username}&per_page=5`,
+        );
+        setUsers(response.data.items);
+        setReposCache({});
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+  });
+
+  const fetchRepositories = async (username: string) => {
+    if (reposCache[username]) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get<GitHubRepo[]>(
+        `https://api.github.com/users/${username}/repos`,
+      );
+
+      setReposCache((prevCache) => ({
+        ...prevCache,
+        [username]: response.data,
+      }));
+    } catch (error) {
+      console.error("Error fetching repositories:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+      <form onSubmit={formik.handleSubmit}>
+        <div className="w-full flex flex-col md:flex-row gap-2">
+          <TextField
+            className="w-full md:w-3/4"
+            id="outlined-basic"
+            label="Username"
+            variant="outlined"
+            placeholder="Enter Username"
+            name="username"
+            value={formik.values.username}
+            onChange={formik.handleChange}
+          />
+          <Button
+            className="w-full md:w-1/4 h-[56px]"
+            variant="contained"
+            disabled={!formik.values.username || loading}
+            type="submit"
+          >
+            {loading ? <CircularProgress size={24} /> : "Search"}
+          </Button>
+        </div>
+      </form>
 
-export default App
+      {users.length > 0 && (
+        <div className="w-full mt-8">
+          <Typography variant="h6" gutterBottom>
+            Matching Users:
+          </Typography>
+          {users.map((user) => (
+            <UserAccordion
+              key={user.id}
+              userLogin={user.login}
+              repos={reposCache[user.login]}
+              isLoading={loading}
+              onExpand={() => fetchRepositories(user.login)}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+};
+
+export default App;
