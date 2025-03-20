@@ -11,27 +11,23 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import StarIcon from "@mui/icons-material/Star";
-import { GitHubRepo } from "../types/types";
+import useFetchRepositories from "../hooks/useFetchRepositories";
+
 
 interface UserAccordionProps {
   userLogin: string;
-  repos: GitHubRepo[] | undefined;
-  isLoading: boolean;
-  onExpand: () => void;
 }
 
-const UserAccordion = ({
-  userLogin,
-  repos,
-  isLoading,
-  onExpand,
-}: UserAccordionProps) => {
+const UserAccordion = ({ userLogin }: UserAccordionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { repos, loading, error } = useFetchRepositories(
+    isExpanded ? userLogin : ""
+  );
 
   const handleChange = (_event: React.SyntheticEvent, expanded: boolean) => {
     setIsExpanded(expanded);
     if (expanded) {
-      onExpand();
+        setIsExpanded(expanded);
     }
   };
 
@@ -41,11 +37,13 @@ const UserAccordion = ({
         <Typography>{userLogin}</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        {isLoading ? (
+        {loading ? (
           <Box display="flex" justifyContent="center">
             <CircularProgress size={24} />
           </Box>
-        ) : repos && repos.length > 0 ? (
+        ) : error ? (
+          <Typography color="error">{error}</Typography>
+        ) : repos.length > 0 ? (
           repos.map((repo) => (
             <Card
               className="cursor-pointer"

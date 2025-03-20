@@ -4,13 +4,10 @@ import axios from "axios";
 import "./App.css";
 import { Button, CircularProgress, TextField, Typography } from "@mui/material";
 import UserAccordion from "./components/UserAccordion";
-import { GitHubUser, GitHubRepo } from "./types/types";
+import { GitHubUser } from "./types/types";
 
 const App = () => {
   const [users, setUsers] = useState<GitHubUser[]>([]);
-  const [reposCache, setReposCache] = useState<{ [key: string]: GitHubRepo[] }>(
-    {},
-  );
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -26,7 +23,6 @@ const App = () => {
           `https://api.github.com/search/users?q=${values.username}&per_page=5`,
         );
         setUsers(response.data.items);
-        setReposCache({});
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -34,28 +30,6 @@ const App = () => {
       }
     },
   });
-
-  const fetchRepositories = async (username: string) => {
-    if (reposCache[username]) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await axios.get<GitHubRepo[]>(
-        `https://api.github.com/users/${username}/repos`,
-      );
-
-      setReposCache((prevCache) => ({
-        ...prevCache,
-        [username]: response.data,
-      }));
-    } catch (error) {
-      console.error("Error fetching repositories:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <>
@@ -88,13 +62,7 @@ const App = () => {
             Matching Users:
           </Typography>
           {users.map((user) => (
-            <UserAccordion
-              key={user.id}
-              userLogin={user.login}
-              repos={reposCache[user.login]}
-              isLoading={loading}
-              onExpand={() => fetchRepositories(user.login)}
-            />
+            <UserAccordion key={user.id} userLogin={user.login} />
           ))}
         </div>
       )}
