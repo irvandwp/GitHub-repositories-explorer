@@ -37,6 +37,13 @@ A React application that integrates with the GitHub API to search for users and 
 3. Install dependencies:
   npm install
 
+### Running the App
+1. Open Terminal
+
+2. Run "npm run dev"
+
+3. Open the localhost url in browser, for example ( http://localhost:5173 )
+
 ## The application uses the following GitHub API endpoints:
 - Search Users: https://api.github.com/search/users?q={query}&per_page=5
 - Get User Repositories: https://api.github.com/users/{username}/repos
