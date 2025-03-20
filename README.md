@@ -2,8 +2,6 @@
 
 A React application that integrates with the GitHub API to search for users and display their repositories.
 
-- demo: https://git-hub-repositories-explorer-theta.vercel.app/
-
 ## Features
 
 - Search for GitHub users by username.
